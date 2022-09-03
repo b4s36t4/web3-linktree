@@ -42,7 +42,7 @@ contract LinkTree is Ownable {
         return users[msg.sender];
     }
 
-    function deleteAccount() public onlyOwner {
+    function deleteAccount() public {
         delete users[msg.sender];
     }
 }

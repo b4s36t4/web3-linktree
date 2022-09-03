@@ -4,7 +4,7 @@ import {
 } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import "@nomiclabs/hardhat-web3";
-import { ethers, storageLayout } from "hardhat";
+import { ethers } from "hardhat";
 
 describe("Link", function () {
   async function depolyContractixture() {
@@ -58,33 +58,59 @@ describe("Link", function () {
       )
         .to.emit(linkTree, "CreateLink")
         .withArgs(byte32Link, byte32Title, 1);
-
-      console.log(await getStorageAt(linkTree.address, 1));
     });
-  });
-  it("Should create a correct IDs", async () => {
-    const { linkTree, owner } = await loadFixture(depolyContractixture);
+    it("Should create a correct IDs", async () => {
+      const { linkTree, otherAccount } = await loadFixture(
+        depolyContractixture
+      );
 
-    const byte32Link = ethers.utils.formatBytes32String("https://google.com");
-    const byte32Title = ethers.utils.formatBytes32String("Google");
-    await expect(
-      await linkTree.addLink(
-        ethers.utils.formatBytes32String("https://google.com"),
-        ethers.utils.formatBytes32String("Google")
+      const byte32Link = ethers.utils.formatBytes32String("https://google.com");
+      const byte32Title = ethers.utils.formatBytes32String("Google");
+      await expect(
+        await linkTree
+          .connect(otherAccount)
+          .addLink(
+            ethers.utils.formatBytes32String("https://google.com"),
+            ethers.utils.formatBytes32String("Google"),
+            {}
+          )
       )
-    )
-      .to.emit(linkTree, "CreateLink")
-      .withArgs(byte32Link, byte32Title, 1);
+        .to.emit(linkTree, "CreateLink")
+        .withArgs(byte32Link, byte32Title, 1);
 
-    await expect(
-      await linkTree.addLink(
-        ethers.utils.formatBytes32String("https://google.com"),
-        ethers.utils.formatBytes32String("Google")
+      await expect(
+        await linkTree
+          .connect(otherAccount)
+          .addLink(
+            ethers.utils.formatBytes32String("https://google.com"),
+            ethers.utils.formatBytes32String("Google")
+          )
       )
-    )
-      .to.emit(linkTree, "CreateLink")
-      .withArgs(byte32Link, byte32Title, 2);
+        .to.emit(linkTree, "CreateLink")
+        .withArgs(byte32Link, byte32Title, 2);
 
-    expect(await linkTree.getUserLinks()).to.be.length(2);
+      expect(await linkTree.connect(otherAccount).getUserLinks()).to.be.length(
+        2
+      );
+
+      expect(await linkTree.connect(otherAccount).deleteAccount());
+      expect(await linkTree.connect(otherAccount).getUserLinks()).to.be.length(
+        0
+      );
+      await expect(
+        await linkTree
+          .connect(otherAccount)
+          .addLink(
+            ethers.utils.formatBytes32String("https://google.com"),
+            ethers.utils.formatBytes32String("Google")
+          )
+      )
+        .to.emit(linkTree, "CreateLink")
+        .withArgs(byte32Link, byte32Title, 3);
+
+      expect(await linkTree.connect(otherAccount).getUserLinks()).to.be.length(
+        1
+      );
+    });
   });
 });
